@@ -91,6 +91,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #fx-sparkle .spk{position:absolute;font-size:22px;color:var(--gold);animation:spk .9s ease-out forwards;text-shadow:0 0 8px currentColor}
 @keyframes spk{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}15%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.1);opacity:0}}
 
+/* 카드 진입 — 더미가 새 차례마다 부드럽게 깔리도록 */
+@keyframes dealIn{from{opacity:0;transform:translateY(10px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+#target-cards .fd,#discard-cards .card{animation:dealIn .26s ease-out}
+
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 
 /* 온라인 로비 오버레이 */
