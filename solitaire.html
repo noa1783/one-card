@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>솔리테어</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+  body{background:
+    radial-gradient(120% 80% at 50% 0%,rgba(232,177,58,.05),transparent 60%),
+    radial-gradient(140% 100% at 50% 42%,var(--felt-a),var(--felt-b) 78%,#0f1d18 100%)}
+  .bar{display:flex;align-items:center;justify-content:center;gap:18px;padding:8px 16px;color:var(--muted);font-size:13px}
+  .bar b{color:var(--gold);font-variant-numeric:tabular-nums}
+  /* 7열이 가로에 들어가도록 카드 폭 축소(보드 한정) */
+  .board{--card-w:clamp(38px,12vw,88px);max-width:860px;margin:0 auto;padding:6px 8px 40px}
+  .top-zone{display:flex;gap:calc(var(--card-w)*0.12);justify-content:center;margin-bottom:16px;align-items:flex-start}
+  .pile{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .pile .lab{font-size:10px;color:var(--muted)}
+  .spacer{flex:1;max-width:40px}
+  .founds{display:flex;gap:calc(var(--card-w)*0.12)}
+  .card.empty.found-slot{font-size:calc(var(--card-w)*0.4);color:rgba(255,255,255,.18);display:grid;place-items:center}
+  .card.empty.recycle{display:grid;place-items:center;font-size:calc(var(--card-w)*0.4);color:var(--muted);cursor:pointer}
+  #stock-n{font-size:10px;color:var(--muted)}
+
+  .tableau{display:flex;gap:calc(var(--card-w)*0.12);justify-content:center;align-items:flex-start}
+  .col{width:var(--card-w);min-height:var(--card-h);display:block}
+  .col .card{display:block;margin-left:auto;margin-right:auto}
+  .col .card.empty{min-height:var(--card-h)}
+  .card.stacked{transition:margin .1s}
+  .card.sel{box-shadow:0 0 0 2px var(--gold),0 8px 18px rgba(0,0,0,.5);z-index:5;position:relative}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="title display">솔리<span class="accent">테어</span></div>
+    <div class="row">
+      <button class="btn ghost" id="btn-auto" style="padding:8px 12px;font-size:13px">자동완성</button>
+      <button class="btn ghost" id="btn-undo" style="padding:8px 12px;font-size:13px">되돌리기</button>
+      <button class="btn ghost" id="btn-mute" style="padding:8px 12px">🔊</button>
+      <button class="btn ghost" id="btn-new" style="padding:8px 12px;font-size:13px">새 게임</button>
+      <a class="btn ghost" href="index.html" style="padding:8px 12px;font-size:13px">허브</a>
+    </div>
+  </div>
+
+  <div class="bar"><span>이동 <b id="moves">0</b></span><span>완성 <b id="found-count">0</b>/52</span></div>
+
+  <div class="board">
+    <div class="top-zone">
+      <div class="pile"><div id="stock"></div><span id="stock-n">24</span></div>
+      <div class="pile"><div id="waste"></div></div>
+      <div class="spacer"></div>
+      <div class="founds">
+        <div class="pile" id="found-S"></div>
+        <div class="pile" id="found-H"></div>
+        <div class="pile" id="found-D"></div>
+        <div class="pile" id="found-C"></div>
+      </div>
+    </div>
+    <div class="tableau" id="tableau"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="big" id="result-big"></div>
+    <div class="sub" id="result-sub"></div>
+    <div class="row">
+      <button class="btn primary" id="result-new">새 게임</button>
+      <a class="btn ghost" href="index.html">허브로</a>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="solitaire.js"></script>
+</body>
+</html>

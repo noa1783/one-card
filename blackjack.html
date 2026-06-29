@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>블랙잭</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+  body{background:
+    radial-gradient(120% 80% at 50% 0%,rgba(232,177,58,.05),transparent 60%),
+    radial-gradient(140% 100% at 50% 42%,var(--felt-a),var(--felt-b) 72%,#0f1d18 100%)}
+  .table{max-width:760px;margin:0 auto;padding:8px 16px 40px;min-height:calc(100vh - 58px);
+    display:flex;flex-direction:column}
+  .area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 0}
+  .area .who{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .area .val{font-family:"Black Han Sans",sans-serif;font-size:26px;color:var(--ivory);min-height:30px}
+  .cards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-height:var(--card-h)}
+  .cards .placeholder{color:var(--muted);font-size:14px;display:grid;place-items:center;
+    width:var(--card-w);height:var(--card-h);border:1.5px dashed rgba(255,255,255,.16);border-radius:calc(var(--card-w)*0.11)}
+  .divider{height:1px;background:rgba(255,255,255,.08);margin:4px 0;position:relative}
+  .divider .bet-badge{position:absolute;right:0;top:-10px;font-size:12px;color:var(--gold);font-weight:700}
+
+  .chiprow{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
+  .chiprow .lbl{color:var(--muted);font-size:13px}
+  .chiprow .chips{font-family:"Black Han Sans",sans-serif;font-size:22px;color:var(--gold)}
+
+  .controls{padding-top:8px}
+  .bet-area{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .bet-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+  .stepper{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .stepper button{background:var(--panel-2);border:none;color:var(--text);width:40px;height:46px;font-size:15px;font-weight:700}
+  .stepper .val{min-width:84px;text-align:center;font-size:18px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+  .bet-hint{color:var(--muted);font-size:14px;min-height:20px;text-align:center}
+  .act-area{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .act-area .btn{min-width:96px;font-size:16px;padding:14px 22px}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="title display">블랙<span class="accent">잭</span></div>
+    <div class="row">
+      <button class="btn ghost" id="btn-mute" style="padding:8px 12px">🔊</button>
+      <a class="btn ghost" href="index.html" style="padding:8px 14px;font-size:14px">허브</a>
+    </div>
+  </div>
+
+  <div class="table">
+    <div class="area">
+      <div class="who">딜러</div>
+      <div class="cards" id="dealer-cards"></div>
+      <div class="val" id="dealer-val"></div>
+    </div>
+
+    <div class="divider"><span class="bet-badge" id="bet-badge"></span></div>
+
+    <div class="area">
+      <div class="val" id="player-val"></div>
+      <div class="cards" id="player-cards"></div>
+      <div class="who">플레이어 (나)</div>
+    </div>
+
+    <div class="controls">
+      <div class="chiprow"><span class="lbl">보유 칩</span><span class="chips" id="chips">0</span></div>
+
+      <div class="bet-area" id="bet-area">
+        <div class="bet-row">
+          <div class="stepper" id="betstep">
+            <button data-d="-50">−50</button>
+            <button data-d="-10">−10</button>
+            <span class="val" id="betval">100</span>
+            <button data-d="10">+10</button>
+            <button data-d="50">+50</button>
+          </div>
+          <button class="btn ghost" id="bet-all" style="padding:10px 14px">올인</button>
+        </div>
+        <div class="bet-hint" id="bet-hint"></div>
+        <div class="row" style="display:flex;gap:12px">
+          <button class="btn primary" id="btn-deal" style="font-size:17px;padding:14px 34px">딜</button>
+          <button class="btn" id="rebuy" style="display:none">리바이 +1,000</button>
+        </div>
+      </div>
+
+      <div class="act-area" id="act-area" style="display:none">
+        <button class="btn" id="btn-hit">히트</button>
+        <button class="btn primary" id="btn-stand">스탠드</button>
+        <button class="btn" id="btn-double">더블</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="blackjack.js"></script>
+</body>
+</html>

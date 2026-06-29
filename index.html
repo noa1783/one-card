@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>카드 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+  .hub{max-width:920px;margin:0 auto;padding:48px 20px 80px}
+  .hub-head{text-align:center;margin-bottom:40px}
+  .hub-head h1{font-size:clamp(44px,11vw,88px);margin:0;color:var(--ivory);line-height:.92}
+  .hub-head h1 .accent{color:var(--gold)}
+  .hub-head p{color:var(--muted);margin:12px 0 0;font-size:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .gcard{display:block;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:26px 24px;transition:transform .12s,border-color .15s,box-shadow .15s;position:relative;overflow:hidden}
+  .gcard:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 16px 40px -12px rgba(0,0,0,.6)}
+  .gcard .emoji{font-size:46px;line-height:1}
+  .gcard h2{font-family:"Black Han Sans",sans-serif;font-size:28px;margin:14px 0 6px;color:var(--ivory)}
+  .gcard p{color:var(--muted);margin:0;font-size:14px;line-height:1.55;min-height:42px}
+  .gcard .tags{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.03em}
+  .tag.single{background:rgba(95,184,122,.16);color:#8fe0a6}
+  .tag.multi{background:rgba(232,177,58,.16);color:var(--gold)}
+  .tag.soon{background:rgba(154,160,168,.14);color:var(--muted)}
+  .gcard .deco{position:absolute;right:-18px;bottom:-26px;font-size:120px;opacity:.05;transform:rotate(-12deg);pointer-events:none}
+  .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:36px}
+</style>
+</head>
+<body>
+  <div class="hub">
+    <div class="hub-head">
+      <h1 class="display">카드<span class="accent">게임</span></h1>
+      <p>원하는 게임을 골라 시작하세요</p>
+    </div>
+    <div class="grid">
+      <a class="gcard" href="onecard.html">
+        <div class="emoji">🃏</div>
+        <h2>원카드</h2>
+        <p>무늬·숫자 맞춰 손패 비우기. 공격·반격·조커가 있는 그 게임.</p>
+        <div class="tags"><span class="tag single">패스앤플레이</span><span class="tag multi">온라인 멀티</span></div>
+        <div class="deco">🃏</div>
+      </a>
+      <a class="gcard" href="oldmaid.html">
+        <div class="emoji">🕵️</div>
+        <h2>도둑잡기</h2>
+        <p>같은 숫자 짝 맞춰 버리기. 마지막에 조커(도둑) 든 사람이 패배.</p>
+        <div class="tags"><span class="tag single">싱글 (봇)</span><span class="tag soon">멀티 예정</span></div>
+        <div class="deco">🕵️</div>
+      </a>
+      <a class="gcard" href="blackjack.html">
+        <div class="emoji">♠️</div>
+        <h2>블랙잭</h2>
+        <p>21에 가깝게. 딜러와 대결, 칩 베팅과 블랙잭 보너스.</p>
+        <div class="tags"><span class="tag single">싱글 (딜러)</span><span class="tag soon">멀티 예정</span></div>
+        <div class="deco">♠️</div>
+      </a>
+      <a class="gcard" href="solitaire.html">
+        <div class="emoji">🎴</div>
+        <h2>솔리테어</h2>
+        <p>클론다이크. 4개 무늬를 A→K로 완성하는 1인 카드 퍼즐.</p>
+        <div class="tags"><span class="tag single">싱글</span><span class="tag soon">경쟁전 예정</span></div>
+        <div class="deco">🎴</div>
+      </a>
+    </div>
+    <p class="foot">탭하면 손쉽게 — 모바일 세로·가로 모두 지원</p>
+  </div>
+  <script src="shared.js"></script>
+</body>
+</html>

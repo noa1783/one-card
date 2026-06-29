@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+<title>원카드 · 멀티</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ══════════ 세팅 화면 ══════════ -->
+<section class="setup-wrap" id="setup">
+  <div class="brand">
+    <h1 class="display">원<span class="accent">카드</span></h1>
+    <span class="tag">multiplayer table</span>
+  </div>
+  <p class="lede">마스터가 판을 세팅하고 시작합니다. 한 기기에서 돌아가며(패스앤플레이) 즉시 플레이하거나, 방을 만들어 각자 기기에서 함께 칠 수 있어요.</p>
+
+  <!-- 플레이어 -->
+  <div class="card-panel">
+    <h2>플레이어</h2>
+    <div class="field">
+      <label>인원 수</label>
+      <div class="stepper" id="player-stepper">
+        <button data-d="-1" aria-label="인원 줄이기">−</button>
+        <span class="val" id="player-count">4</span>
+        <button data-d="1" aria-label="인원 늘리기">＋</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>이름</label>
+      <div class="players-grid" id="players-grid"></div>
+    </div>
+  </div>
+
+  <!-- 규칙 -->
+  <div class="card-panel">
+    <h2>규칙</h2>
+    <div class="field">
+      <label>시작 카드 수 (1인당)</label>
+      <div class="stepper" id="start-stepper">
+        <button data-d="-1" aria-label="줄이기">−</button>
+        <span class="val" id="start-count">7</span>
+        <button data-d="1" aria-label="늘리기">＋</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="toggle">
+        <input type="checkbox" id="use-jokers" checked/>
+        <span class="track"></span>
+        <span class="lbl">조커 허용 <span style="color:var(--muted);font-size:13px">(블랙 +5장 · 컬러 +7장 공격)</span></span>
+      </label>
+    </div>
+
+    <details class="adv">
+      <summary>고급 룰 (특수 카드 수치 조정)</summary>
+      <div class="rule-grid">
+        <div class="rule-cell">
+          <label>2 = 공격 (장)</label>
+          <input type="number" id="atk2" value="2" min="0" max="9"/>
+        </div>
+        <div class="rule-cell">
+          <label>A = 공격 (장)</label>
+          <input type="number" id="atkA" value="3" min="0" max="9"/>
+        </div>
+        <div class="rule-cell">
+          <label>무늬 변경 (와일드)</label>
+          <select id="wildRank"><option>7</option><option>없음</option></select>
+        </div>
+        <div class="rule-cell">
+          <label>건너뛰기 (스킵)</label>
+          <select id="skipRank"><option>J</option><option>없음</option></select>
+        </div>
+        <div class="rule-cell">
+          <label>방향 전환</label>
+          <select id="reverseRank"><option>Q</option><option>없음</option></select>
+        </div>
+        <div class="rule-cell">
+          <label>한 번 더 내기</label>
+          <select id="extraRank"><option>K</option><option>없음</option></select>
+        </div>
+      </div>
+      <div class="rule-cell" style="margin-top:12px">
+        <label class="toggle" style="margin:0">
+          <input type="checkbox" id="jokerCounters"/>
+          <span class="track"></span>
+          <span class="lbl" style="font-size:14px">조커로 숫자 공격(2·A) 반격 허용</span>
+        </label>
+      </div>
+      <p class="mini-help">기본값: 2·A는 서로 반격(되받아치기)으로 쌓이고, 조커는 조커끼리만 쌓입니다. 공격을 못 받아치면 누적 장수를 전부 가져옵니다.</p>
+    </details>
+  </div>
+
+  <!-- 멀티 방식 -->
+  <div class="card-panel">
+    <h2>플레이 방식</h2>
+    <div class="rt-box">
+      <span class="rt-status" id="rt-status">오프라인 단독 모드</span>
+    </div>
+    <div class="field" id="rt-online-fields" style="margin-top:14px">
+      <label>각자 기기에서 함께 치기 (선택)</label>
+      <div class="row">
+        <input type="text" id="rt-room" placeholder="방 코드 (참가 시)" maxlength="8"/>
+        <input type="text" id="rt-myname" placeholder="내 닉네임 (참가 시)" maxlength="16"/>
+        <button class="btn ghost" id="btn-join">방에 참가</button>
+      </div>
+      <p class="mini-help">Firebase 설정(<code>firebase-config.js</code>)을 채우면 온라인 멀티가 켜집니다. 비워두면 한 기기 패스앤플레이로 동작합니다. 자세한 건 README 참고.</p>
+    </div>
+    <div class="start-bar">
+      <button class="btn primary" id="btn-start">한 기기에서 시작 (패스앤플레이)</button>
+      <button class="btn" id="btn-host" disabled>마스터로 방 만들기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 게임 화면 ══════════ -->
+<section class="game" id="game">
+  <div class="topbar">
+    <div class="title display">원<span class="accent">카드</span></div>
+    <div class="room" id="room-info"></div>
+    <div class="row" style="gap:8px">
+      <button class="btn ghost" id="btn-mute" style="padding:8px 12px;font-size:15px" title="소리 끄기">🔊</button>
+      <button class="btn ghost" id="btn-rematch" style="padding:8px 14px;font-size:14px">새 판</button>
+      <button class="btn ghost" id="btn-quit" style="padding:8px 14px;font-size:14px">나가기</button>
+    </div>
+  </div>
+
+  <div class="opponents" id="opponents"></div>
+
+  <div class="attack-banner">
+    <div class="attack-counter" id="attack-counter">
+      <span class="swords">⚔️</span>
+      <div class="meta">
+        <div class="k">받을 카드</div>
+        <div class="v"><span id="atk-num">0</span><small>장</small></div>
+      </div>
+      <div class="hint" id="atk-hint">공격 카드로 반격하거나, 못 하면 전부 가져옵니다.</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="pile">
+      <span class="lbl">버린 더미</span>
+      <div id="top-card"></div>
+    </div>
+    <div class="suit-now">
+      <div class="chip" id="suit-chip">♠</div>
+      <span class="t">현재 무늬</span>
+    </div>
+    <div class="pile">
+      <span class="lbl">뽑기 더미</span>
+      <div class="deck-back" id="deck-pile">뒷면<span class="n" id="deck-n">0</span></div>
+    </div>
+  </div>
+
+  <div class="turn-strip">
+    <div class="who" id="turn-who"></div>
+    <div class="sub" id="turn-sub"></div>
+  </div>
+
+  <div class="myhand-wrap">
+    <div class="myhand-head">
+      <div class="nm" id="my-name"></div>
+      <div class="muted" id="my-count" style="color:var(--muted);font-size:14px"></div>
+    </div>
+    <div class="myhand" id="myhand"></div>
+    <div class="actions" id="actions"></div>
+  </div>
+</section>
+
+<!-- 패스앤플레이 가림막 -->
+<div class="cover" id="cover">
+  <div class="hand-icon">🃏</div>
+  <div class="who" id="cover-who"></div>
+  <p>다른 사람은 화면을 보지 마세요. 준비되면 아래를 누르세요.</p>
+  <button class="btn primary" id="cover-ready" style="font-size:17px;padding:14px 30px">내 손패 보기</button>
+</div>
+
+<!-- 무늬 선택 모달 -->
+<div class="modal" id="suit-modal">
+  <div class="box">
+    <h3>무늬 선택</h3>
+    <p>바꿀 무늬를 고르세요.</p>
+    <div class="suit-pick" id="suit-pick">
+      <button class="black" data-s="S">♠</button>
+      <button class="red" data-s="H">♥</button>
+      <button class="red" data-s="D">♦</button>
+      <button class="black" data-s="C">♣</button>
+    </div>
+  </div>
+</div>
+
+<!-- 승리 -->
+<div class="win" id="win">
+  <div class="crown">👑</div>
+  <div class="who" id="win-who"></div>
+  <div class="sub">원카드!</div>
+  <div class="row">
+    <button class="btn primary" id="win-rematch">같은 설정으로 새 판</button>
+    <button class="btn ghost" id="win-home">세팅으로</button>
+  </div>
+</div>
+
+<!-- 토스트 / 로그 -->
+<div class="toast" id="toast"></div>
+<button class="btn ghost log-toggle" id="log-toggle" style="padding:8px 12px;font-size:13px">기록</button>
+<div class="logbox" id="logbox"></div>
+
+<!-- 이펙트 레이어 -->
+<div id="fx-flash"></div>
+<div id="fx-sparkle"></div>
+
+<!-- firebase (config 비어있으면 무시) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="game.js"></script>
+<script src="effects.js"></script>
+<script src="realtime.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

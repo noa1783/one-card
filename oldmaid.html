@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>도둑잡기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<link rel="stylesheet" href="shared.css"/>
+<style>
+  #game{display:none;min-height:100vh;background:
+    radial-gradient(120% 80% at 50% 0%,rgba(232,177,58,.05),transparent 60%),
+    radial-gradient(140% 100% at 50% 42%,var(--felt-a),var(--felt-b) 72%,#0f1d18 100%)}
+  #game.show{display:block}
+  .setup{max-width:560px;margin:0 auto;padding:40px 20px}
+  .setup h1{font-size:clamp(40px,10vw,68px);margin:0 0 6px;color:var(--ivory)}
+  .setup h1 .accent{color:var(--gold)}
+  .setup .lede{color:var(--muted);margin:0 0 24px;line-height:1.6}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+  .panel h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+  .stepper{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .stepper button{background:var(--panel-2);border:none;color:var(--text);width:44px;height:44px;font-size:20px}
+  .stepper .val{min-width:56px;text-align:center;font-size:18px;font-weight:700;display:grid;place-items:center}
+  .back-link{color:var(--muted);font-size:14px;display:inline-block;margin-bottom:18px}
+
+  .opp{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:22px 14px 6px}
+  .seat{background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.07);border-radius:12px;
+    padding:10px 14px;min-width:110px;text-align:center;transition:border-color .2s,box-shadow .2s}
+  .seat.turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 22px -6px var(--gold)}
+  .seat.target{border-color:#5fb8e6;box-shadow:0 0 0 1px #5fb8e6,0 0 26px -4px #5fb8e6}
+  .snm{font-weight:700;font-size:14px} .snm .tn{color:var(--gold)}
+  .scnt{color:var(--muted);font-size:12px;margin-top:5px}
+  .fan{display:flex;justify-content:center;margin-top:8px;min-height:40px;flex-wrap:wrap;gap:0}
+  .fan .mb{width:24px;height:34px;border-radius:4px;margin-left:-12px;
+    background:repeating-linear-gradient(45deg,#3a2a55,#3a2a55 4px,#4a366d 4px,#4a366d 8px);
+    border:1px solid #5a4582;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .fan .mb:first-child{margin-left:0}
+  .fan .mb.pick{cursor:pointer;transition:transform .1s}
+  .fan .mb.pick:hover{transform:translateY(-8px);border-color:var(--gold);box-shadow:0 0 10px var(--gold)}
+  .fan .done{color:var(--ok);font-size:12px;font-weight:700;align-self:center}
+
+  .status{text-align:center;font-size:clamp(16px,4.5vw,22px);color:var(--ivory);padding:14px 16px 6px;min-height:30px}
+  .status b{color:var(--gold)}
+
+  .stage{display:flex;gap:30px;justify-content:center;align-items:flex-start;padding:16px 14px 4px;flex-wrap:wrap;min-height:calc(var(--card-w)*1.4)}
+  .pile-box{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .pile-lab{font-size:13.5px;color:var(--muted)} .pile-lab b{color:var(--gold)}
+  .pile-cards{display:flex;align-items:center}
+  #target-cards{--card-w:clamp(46px,11vw,74px)}
+  #discard-cards{--card-w:clamp(46px,11vw,74px);gap:6px}
+  #target-cards .fd{transition:transform .12s,box-shadow .12s}
+  #stage.mine #target-cards .fd{box-shadow:0 0 0 1px rgba(232,177,58,.5),0 6px 16px rgba(0,0,0,.45)}
+  #target-cards .fd.pickable{cursor:pointer}
+  #target-cards .fd.pickable:hover{transform:translateY(-12px);box-shadow:0 0 0 2px var(--gold),0 12px 22px rgba(0,0,0,.5);z-index:2}
+  .myhand-wrap{padding:8px 14px 36px}
+  .mhead{display:flex;justify-content:space-between;max-width:980px;margin:0 auto 8px;padding:0 4px;align-items:center}
+  .mhead .nm{font-weight:800}.mhead .nm .you{color:var(--gold);font-size:12px;margin-left:6px}
+  .myhand{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:1100px;margin:0 auto}
+
+  .logt{position:fixed;right:16px;bottom:16px;z-index:50}
+  .logbox{position:fixed;right:16px;bottom:64px;z-index:50;width:280px;max-height:40vh;overflow:auto;
+    background:rgba(12,14,18,.94);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:none}
+  .logbox.show{display:block}.logbox .li{font-size:12.5px;color:#c4cad3;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+</style>
+</head>
+<body>
+
+<!-- 세팅 -->
+<section class="setup" id="setup">
+  <a class="back-link" href="index.html">← 게임 허브</a>
+  <h1 class="display">도둑<span class="accent">잡기</span></h1>
+  <p class="lede">같은 숫자 2장을 모으면 버려요. 옆 사람 카드를 한 장씩 가져오다 보면 짝 없는 조커(도둑)가 돌아다닙니다. 마지막에 조커를 들고 있는 사람이 패배!</p>
+  <div class="panel">
+    <h2>인원 (나 + 봇)</h2>
+    <div class="stepper" id="pstep">
+      <button data-d="-1">−</button><span class="val" id="pval">4</span><button data-d="1">＋</button>
+    </div>
+  </div>
+  <button class="btn primary" id="btn-start" style="font-size:16px;padding:14px 26px">싱글 시작 (봇과)</button>
+
+  <div class="panel" style="margin-top:18px">
+    <h2>온라인 멀티 (각자 기기)</h2>
+    <div class="rt-status" id="rt-status" style="color:var(--muted);font-size:13px;margin-bottom:12px">오프라인 · 싱글만 가능</div>
+    <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <input type="text" id="rt-room" placeholder="방 코드 (참가 시)" maxlength="8" style="background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px 12px;font-size:15px"/>
+      <input type="text" id="rt-myname" placeholder="내 닉네임" maxlength="14" style="background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px 12px;font-size:15px"/>
+      <button class="btn ghost" id="btn-join">방에 참가</button>
+    </div>
+    <button class="btn" id="btn-host" disabled>마스터로 방 만들기</button>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.55;margin:12px 0 0">원카드와 같은 Firebase를 사용해요. 마스터가 방을 만들고 코드를 공유하면 각자 기기에서 함께 칠 수 있어요. (온라인은 봇 없이 사람만, 2~5명)</p>
+  </div>
+</section>
+
+<!-- 게임 -->
+<section id="game">
+  <div class="topbar">
+    <div class="title display">도둑<span class="accent">잡기</span></div>
+    <div class="room" id="room-info" style="font-size:13px;color:var(--muted)"></div>
+    <div class="row">
+      <button class="btn ghost" id="btn-mute" style="padding:8px 12px">🔊</button>
+      <button class="btn ghost" id="btn-new" style="padding:8px 14px;font-size:14px">새 게임</button>
+      <a class="btn ghost" href="index.html" style="padding:8px 14px;font-size:14px">허브</a>
+    </div>
+  </div>
+  <div class="opp" id="opp"></div>
+  <div class="stage" id="stage">
+    <div class="pile-box" id="target-box">
+      <div class="pile-lab" id="target-lab"></div>
+      <div class="pile-cards" id="target-cards"></div>
+    </div>
+    <div class="pile-box" id="discard-box" style="visibility:hidden">
+      <div class="pile-lab">버린 짝</div>
+      <div class="pile-cards" id="discard-cards"></div>
+    </div>
+  </div>
+  <div class="status" id="status"></div>
+  <div class="myhand-wrap">
+    <div class="mhead"><div class="nm">나 <span class="you">YOU</span></div><div class="muted" id="mycount" style="color:var(--muted);font-size:14px"></div></div>
+    <div class="myhand" id="myhand"></div>
+  </div>
+</section>
+
+<!-- 결과 -->
+<div class="result" id="result">
+  <div class="big" id="result-big"></div>
+  <div class="sub" id="result-sub"></div>
+  <div class="row">
+    <button class="btn primary" id="result-new">새 게임</button>
+    <a class="btn ghost" href="index.html">허브로</a>
+  </div>
+</div>
+
+<button class="btn ghost logt" id="logt" style="padding:8px 12px;font-size:13px">기록</button>
+<div class="logbox" id="logbox"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="shared.js"></script>
+<script src="oldmaid.js"></script>
+<script src="oldmaid-rt.js"></script>
+</body>
+</html>
