@@ -208,6 +208,7 @@
 
   /* ───────────────────────── 액션 처리 ───────────────────────── */
   async function onPlay(card) {
+    if (window.Effects) Effects.unlock();   // 사용자 제스처 내에서 오디오 잠금 해제
     let suit = null;
     const needSuit = card.suit === 'JOKER' || (App.game ? card.rank === App.game.rules.wildRank : false)
       || (App._rules ? card.rank === App._rules.wildRank : false);
@@ -224,6 +225,7 @@
   }
 
   function onDraw() {
+    if (window.Effects) Effects.unlock();   // 사용자 제스처 내에서 오디오 잠금 해제
     if (App.mode === 'online') { RT.sendMove({ type: 'draw' }); return; }
     const pid = App.game.currentPlayer().id;
     const r = App.game.drawAndPass(pid);
@@ -331,7 +333,7 @@
     App.cfg = cfg; App.mode = 'hotseat';
     App.game = new OneCard.OneCardGame(cfg);
     App._rules = App.game.rules;
-    if (window.Effects) Effects.reset();
+    if (window.Effects) { Effects.reset(); Effects.unlock(); }
     $('#room-info').textContent = '한 기기 · 패스앤플레이';
     App.showGame();
     const first = App.game.currentPlayer();
@@ -340,7 +342,7 @@
   App.startHotseatFromCfg = function () { // 새 판
     App.game = new OneCard.OneCardGame(App.cfg);
     App._rules = App.game.rules;
-    if (window.Effects) Effects.reset();
+    if (window.Effects) { Effects.reset(); Effects.unlock(); }
     const first = App.game.currentPlayer();
     showCover(first, () => render(vmFromEngine(App.game, first.id)));
   };

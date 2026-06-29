@@ -173,18 +173,20 @@
   }
 
   /* ── 렌더 훅 ─────────────────────────────────────────────── */
-  let lastSeq = null, winFired = false;
+  let lastSeq = null, winFired = false, primed = false;
   Effects.onRender = function (vm) {
     const la = vm.lastAction;
     const seq = la && la.seq != null ? la.seq : null;
     if (seq != null && seq !== lastSeq) {
-      if (lastSeq !== null) fire(classify(la, vm.rules || (window.App && App._rules)));
+      // primed: 초기 보드(또는 온라인 중도 합류) 1회만 건너뛰고, 이후 실제 수는 모두 소리 재생
+      if (primed) fire(classify(la, vm.rules || (window.App && App._rules)));
       lastSeq = seq;
     }
+    primed = true;
     if (vm.winner && !winFired) { winFired = true; SOUND.win(); sparkle('joker'); }
     if (!vm.winner) winFired = false;
   };
-  Effects.reset = function () { lastSeq = null; winFired = false; };
+  Effects.reset = function () { lastSeq = null; winFired = false; primed = false; };
 
   /* 첫 사용자 동작에서 오디오 잠금 해제 */
   document.addEventListener('pointerdown', () => Effects.unlock(), { once: true });
