@@ -182,7 +182,6 @@
         : `${esc(nmIn(vm.players, vm.turnId))} → <b>${esc(tp.name)}</b>`;
       for (let i = 0; i < tp.count; i++) {
         const el = Cards.el(null, { faceDown: true }); el.classList.add('fd');
-        if (i > 0) el.style.marginLeft = 'calc(var(--card-w) * -0.5)';
         if (isMyPick) { el.classList.add('pickable'); el.addEventListener('click', () => humanDraw(i)); }
         tcards.appendChild(el);
       }
