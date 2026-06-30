@@ -113,6 +113,20 @@
   @keyframes upop{0%{transform:scale(.55) rotate(-8deg);opacity:.4}60%{transform:scale(1.12) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
   @media (prefers-reduced-motion:reduce){.ucard{animation:none !important}}
 
+  /* 공격 흔들림 */
+  #game.shake{animation:ushake .46s ease-in-out}
+  @keyframes ushake{0%,100%{transform:translateX(0)}15%{transform:translateX(-9px)}30%{transform:translateX(8px)}45%{transform:translateX(-6px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}90%{transform:translateX(2px)}}
+
+  /* 한 장씩 뽑기 연출 */
+  #draw-reveal{position:fixed;inset:0;z-index:55;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(8,10,14,.58);pointer-events:none}
+  #draw-reveal.show{display:flex}
+  #draw-reveal .dr-cap{font-family:"Black Han Sans",sans-serif;font-size:clamp(18px,4.5vw,28px);color:var(--ivory);text-shadow:0 3px 16px rgba(0,0,0,.7)}
+  #draw-reveal .dr-card{--uw:clamp(100px,22vw,158px);box-shadow:0 18px 48px -10px rgba(0,0,0,.7);animation:drIn .3s cubic-bezier(.2,1.3,.5,1)}
+  #draw-reveal .dr-card.dr-out{animation:drOut .22s ease-in forwards}
+  @keyframes drIn{0%{transform:scale(.4) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes drOut{0%{transform:scale(1);opacity:1}100%{transform:translateY(150px) scale(.45);opacity:0}}
+  @media (prefers-reduced-motion:reduce){#game.shake{animation:none !important}#draw-reveal .dr-card{animation:none !important}}
+
   /* 색 선택 모달 */
   .cmodal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
   .cmodal.show{display:flex}
@@ -224,6 +238,9 @@
   </div>
 </section>
 
+<!-- 한 장씩 뽑기 연출 -->
+<div id="draw-reveal"></div>
+
 <!-- 패스앤플레이 가림막 -->
 <div class="cover" id="cover">
   <div style="font-size:56px">🎴</div>
@@ -249,6 +266,8 @@
   <div class="sub" id="result-sub"></div>
   <div class="row"><button class="btn primary" id="result-new">새 판</button><a class="btn ghost" href="index.html">허브로</a></div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <button class="btn ghost logt" id="logt" style="padding:8px 12px;font-size:13px">기록</button>
 <div class="logbox" id="logbox"></div>

@@ -194,22 +194,22 @@
         return { ok: true, drawn: drawn.length };
       }
 
-      let drawn;
+      let drawn, keepTurn = false;
       if (this.rules.drawMode === 'untilPlayable') {
         drawn = []; let guard = 0;
         while (guard++ < 300) {
           const got = this._draw(pid, 1);
-          if (!got.length) break;                                // 덱 완전 소진
+          if (!got.length) break;                                       // 덱 완전 소진
           drawn.push(got[0]);
-          if (canPlay(got[0], this._ctx(this.hands[pid]))) break; // 낼 카드 나옴 → 멈춤
+          if (canPlay(got[0], this._ctx(this.hands[pid]))) { keepTurn = true; break; } // 낼 카드 나옴 → 멈춤
         }
       } else {
         drawn = this._draw(pid, 1);
       }
       this.lastAction = { type: 'draw', playerId: pid, count: drawn.length, wasAttack: false, seq: ++this.seq };
-      this._say(`${this.playerName(pid)} ${drawn.length}장 뽑기`);
-      this._advance(1);
-      return { ok: true, drawn: drawn.length };
+      this._say(`${this.playerName(pid)} ${drawn.length}장 뽑기${keepTurn ? ' (낼 카드 나옴 — 이어서 내기)' : ''}`);
+      if (!keepTurn) this._advance(1);   // untilPlayable에서 낼 카드 뽑으면 턴 유지 → 직접 내고 넘김
+      return { ok: true, drawn: drawn.length, keepTurn };
     }
 
     publicState() {
@@ -317,8 +317,68 @@
   /* ── 렌더 ── */
   const COLOR_HEX = { R: '#d9412e', G: '#3aa856', B: '#2f6fd6', Y: '#e6b422' };
   let winFired = false, lastSeq = null, primed = false;
+  let revealing = false, revealedSeq = null, pendingVM = null, lockUI = false, prevLen = 0;
 
+  // 진입점: 온라인에서 내가 뽑았으면 한 장씩 연출 후 렌더 / 그 외엔 바로 렌더
   function render(vm) {
+    const la = vm.lastAction;
+    if (UApp.mode === 'online') {
+      const grew = vm.myHand.length - prevLen;
+      const myDraw = la && la.type === 'draw' && la.playerId === vm.myPid && grew > 0 && la.seq !== revealedSeq;
+      if (myDraw) {
+        revealedSeq = la.seq; lastSeq = la.seq;     // 내 뽑기 효과는 연출이 담당
+        const drawn = vm.myHand.slice(vm.myHand.length - grew);
+        const base = vm.myHand.slice(0, vm.myHand.length - grew);
+        doReveal(vm, drawn, base, null);
+        return;
+      }
+    }
+    if (revealing) { pendingVM = vm; return; }
+    paint(vm, vm.myHand); afterFx(vm); prevLen = vm.myHand.length;
+  }
+
+  // 뽑은 카드를 중앙에 한 장씩 보여주고 손패에 더하는 연출
+  function doReveal(vm, drawn, baseHand, after) {
+    revealing = true; lockUI = true;
+    if (vm.lastAction && vm.lastAction.wasAttack) Fx.flash('bad');
+    paint(vm, baseHand);
+    revealSequence(drawn, vm, baseHand, () => {
+      revealing = false; lockUI = false;
+      const v = pendingVM || vm; pendingVM = null;
+      paint(v, v.myHand); afterFx(v); prevLen = v.myHand.length;
+      if (after) after(v);
+    });
+  }
+  function revealSequence(cards, vm, baseHand, done) {
+    const overlay = $('#draw-reveal'); const shown = baseHand.slice(); let i = 0;
+    function step() {
+      if (i >= cards.length) { overlay.classList.remove('show'); overlay.innerHTML = ''; done(); return; }
+      const c = cards[i++];
+      overlay.innerHTML = '';
+      const cap = document.createElement('div'); cap.className = 'dr-cap'; cap.textContent = '뽑은 카드';
+      const big = ucardEl(c); big.classList.add('dr-card');
+      overlay.appendChild(cap); overlay.appendChild(big);
+      overlay.classList.add('show'); Sfx.draw();
+      setTimeout(() => {
+        shown.push(c); paint(vm, shown);   // 손패에 추가
+        big.classList.add('dr-out');
+        setTimeout(step, 200);
+      }, 520);
+    }
+    step();
+  }
+
+  // 효과음/승리/결과 처리 (paint 뒤 1회)
+  function afterFx(vm) {
+    fireFx(vm);
+    if (vm.winner && !winFired) { winFired = true; Sfx.win(); Fx.sparkle('gold'); }
+    if (!vm.winner) winFired = false;
+    if (vm.winner) endGame(vm); else { const r = $('#result'); if (r) r.classList.remove('show'); }
+  }
+
+  // 실제 DOM 그리기 (handCards 로 손패 지정 — 연출 중 부분 손패 표시)
+  function paint(vm, handCards) {
+    handCards = handCards || vm.myHand;
     // 상대 좌석
     const opp = $('#opp'); opp.innerHTML = '';
     vm.players.forEach(p => {
@@ -358,19 +418,19 @@
     $('#turn-sub').innerHTML = sub;
 
     // 내 손패
-    const me = vm.players.find(p => p.id === vm.myPid) || { name: '', count: vm.myHand.length };
+    const me = vm.players.find(p => p.id === vm.myPid) || { name: '', count: handCards.length };
     $('#my-name').innerHTML = `${esc(me.name || '나')} <span class="you">YOU</span>`;
-    $('#my-count').textContent = `${vm.myHand.length}장${vm.myHand.length === 1 ? ' · UNO!' : ''}`;
+    $('#my-count').textContent = `${handCards.length}장${handCards.length === 1 ? ' · UNO!' : ''}`;
     const hand = $('#myhand'); hand.innerHTML = '';
     const playable = new Set(vm.playableIds);
-    vm.myHand.forEach(c => {
-      const pl = vm.isMyTurn && playable.has(c.id);
-      hand.appendChild(ucardEl(c, { playable: pl, dim: vm.isMyTurn && !pl, onClick: pl ? () => onPlay(c) : null }));
+    handCards.forEach(c => {
+      const pl = vm.isMyTurn && !lockUI && playable.has(c.id);
+      hand.appendChild(ucardEl(c, { playable: pl, dim: vm.isMyTurn && !lockUI && !pl, onClick: pl ? () => onPlay(c) : null }));
     });
 
     // 액션
     const act = $('#actions'); act.innerHTML = '';
-    if (vm.isMyTurn && !vm.winner) {
+    if (vm.isMyTurn && !vm.winner && !lockUI) {
       const underAtk = vm.attackActive && vm.pendingDraw > 0;
       const b = document.createElement('button'); b.className = 'btn' + (underAtk ? ' danger' : ' primary');
       if (underAtk) { b.textContent = `공격 ${vm.pendingDraw}장 받기`; b.onclick = onDraw; }
@@ -385,36 +445,34 @@
 
     // 로그
     $('#logbox').innerHTML = (vm.log || []).slice().reverse().map(l => `<div class="li">${esc(l.msg)}</div>`).join('');
-
-    // 효과음/이펙트
-    fireFx(vm);
-    if (vm.winner && !winFired) { winFired = true; Sfx.win(); Fx.sparkle('gold'); }
-    if (!vm.winner) winFired = false;
-    if (vm.winner) endGame(vm); else $('#result').classList.remove('show');
   }
 
   function popTop() { const c = $('#top-card .ucard'); if (!c) return; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); }
+  function shake() { const g = $('#game'); if (!g) return; g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake'); setTimeout(() => g.classList.remove('shake'), 460); }
+  function attackFx(n) { shake(); Fx.flash('bad'); Sfx.place(); Sfx.invalid(); toast(`<b style="color:var(--danger)">⚔️ +${n} 공격!</b>`, 950); }
+
   function fireFx(vm) {
     const la = vm.lastAction; const seq = la && la.seq != null ? la.seq : null;
     if (seq != null && seq !== lastSeq) {
-      if (primed) playFx(la);
+      if (primed) playFx(la, vm);
       lastSeq = seq;
     }
     primed = true;
   }
-  function playFx(la) {
-    if (la.type === 'draw') { Sfx.draw(); if (la.wasAttack) Fx.flash('bad'); return; }
+  function playFx(la, vm) {
+    if (la.type === 'draw') { if (la.playerId !== vm.myPid) { Sfx.draw(); if (la.wasAttack) Fx.flash('bad'); } return; } // 내 뽑기는 연출이 처리
     if (la.type !== 'play') return;
     popTop();
     const c = la.card;
+    if (UnoGame.drawValue(c) > 0) { attackFx(UnoGame.drawValue(c)); return; }
     if (UnoGame.isWild(c)) { Sfx.place(); Fx.sparkle('gold'); return; }
-    if (UnoGame.drawValue(c) > 0) { Sfx.place(); Fx.flash('bad'); return; }
     Sfx.place();
   }
-  function resetFx() { lastSeq = null; primed = false; winFired = false; }
+  function resetFx() { lastSeq = null; primed = false; winFired = false; revealing = false; revealedSeq = null; pendingVM = null; lockUI = false; prevLen = 0; }
 
   /* ── 액션 처리 ── */
   async function onPlay(card) {
+    if (lockUI) return;
     Sfx.unlock();
     let color = null;
     if (card.color === 'W') { color = await pickColor(); if (!color) return; }
@@ -425,18 +483,33 @@
     afterLocalMove();
   }
   function onDraw() {
+    if (lockUI) return;
     Sfx.unlock();
     if (UApp.mode === 'online') { RT.sendMove({ type: 'draw' }); return; }
     const pid = UApp.game.currentPlayer().id;
     const r = UApp.game.drawAndPass(pid);
     if (!r.ok) { toast(esc(r.error)); return; }
-    afterLocalMove();
+    afterLocalDraw(pid, r);
   }
-  function afterLocalMove() {
+  function afterLocalMove() {   // 카드 낸 뒤
     if (UApp.game.winner) { render(vmFromEngine(UApp.game, UApp.game.winner)); return; }
     const next = UApp.game.currentPlayer();
     showCover(next, () => render(vmFromEngine(UApp.game, next.id)));
     toast(`<b>${esc(next.name)}</b> 차례`);
+  }
+  function afterLocalDraw(actorPid, r) {   // 뽑은 뒤 — 뽑은 카드를 actor에게 한 장씩 연출
+    const g = UApp.game;
+    const vm = vmFromEngine(g, actorPid);
+    const n = r.drawn, full = vm.myHand;
+    const drawn = full.slice(full.length - n), base = full.slice(0, full.length - n);
+    const next = g.currentPlayer();
+    doReveal(vm, drawn, base, () => {
+      if (next.id !== actorPid) {                 // 턴 넘어감 → 다음 사람 가림막
+        showCover(next, () => render(vmFromEngine(g, next.id)));
+        toast(`<b>${esc(next.name)}</b> 차례`);
+      }
+      // next.id === actorPid (낼 카드 뽑아 턴 유지): doReveal이 이미 전체 손패+제출 가능 표시까지 그림
+    });
   }
 
   /* 색 선택 모달 → Promise */
